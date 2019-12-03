@@ -1,0 +1,64 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: jenkins-cb
+  region: us-west-2
+  version: '1.14'
+
+vpc:
+  cidr: 20.10.0.0/16
+  autoAllocateIPv6: false
+  nat:
+    gateway: Single
+
+availabilityZones: 
+  - us-west-2b
+  - us-west-2c
+
+nodeGroups:
+  - name: eks-exp-ng-01
+    labels: {
+      project: eks, 
+      type: eks,
+      workload: normal,
+      lifecycle: spot
+      }
+    ami: ami-05d586e6f773f6abf
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+        certManager: true
+        appMesh: true
+        ebs: true
+        efs: true
+        albIngress: true
+        cloudWatch: true
+        xRay: true
+    # ssh:
+    #   allow: true
+    #   publicKeyName: eastside-aws
+    tags:
+      'environment': 'exp'
+      'cluster-name': 'jenkins-cluster'
+      'project': 'eks'
+      'datadog': 'true'
+      'lifecycle': 'spot'
+    volumeSize: 20
+    volumeType: gp2
+    minSize: 1
+    desiredCapacity: 1
+    maxSize: 10
+    privateNetworking: true
+    instancesDistribution:
+      maxPrice: 0.17
+      instanceTypes: ["m5.xlarge", "c5.xlarge"] # At least two instance types should be specified
+      onDemandBaseCapacity: 0
+      onDemandPercentageAboveBaseCapacity: 0
+      spotInstancePools: 2
+
+cloudWatch:
+  clusterLogging:
+    enableTypes: ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+    # all supported types: "api", "audit", "authenticator", "controllerManager", "scheduler"
+    # supported special values: "*" and "all"
